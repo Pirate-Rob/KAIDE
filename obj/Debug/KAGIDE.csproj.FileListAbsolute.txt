@@ -14,3 +14,4 @@ C:\Users\User\source\repos\KAGIDE\bin\Debug\ScintillaNET.dll
 C:\Users\User\source\repos\KAGIDE\bin\Debug\ScintillaNET.xml
 C:\Users\User\source\repos\KAGIDE\obj\Debug\KAGIDE.csproj.CopyComplete
 C:\Users\User\source\repos\KAGIDE\obj\Debug\KAGIDE.ConfigForm.resources
+C:\Users\User\source\repos\KAGIDE\obj\Debug\KAGIDE.CFGTab.resources
