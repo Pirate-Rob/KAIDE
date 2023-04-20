@@ -79,12 +79,15 @@
             // tabControl1
             // 
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tabControl1.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
             this.tabControl1.Location = new System.Drawing.Point(0, 24);
             this.tabControl1.Multiline = true;
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(914, 717);
             this.tabControl1.TabIndex = 1;
+            this.tabControl1.DrawItem += new System.Windows.Forms.DrawItemEventHandler(tabControl1_DrawItem);
+            this.tabControl1.MouseDown += new System.Windows.Forms.MouseEventHandler(tabControl1_MouseDown);
             // 
             // Form1
             // 
