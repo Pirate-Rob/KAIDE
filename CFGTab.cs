@@ -12,7 +12,6 @@ namespace KAGIDE
 {
     internal class CFGTab : TabPage
     {
-        private Label label1;
 
         public CFGTab(string path)
         {
@@ -43,6 +42,7 @@ namespace KAGIDE
             */
 
             InitializeComponent();
+            
 
         }
 
@@ -67,23 +67,17 @@ namespace KAGIDE
 
         private void InitializeComponent()
         {
-            this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(0, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(100, 23);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "label1";
-            this.label1.Click += new System.EventHandler(this.label1_Click);
             this.ResumeLayout(false);
 
         }
 
         private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
         {
 
         }
