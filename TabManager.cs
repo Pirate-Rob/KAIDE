@@ -48,6 +48,7 @@ namespace KAGIDE
             if(Path.GetExtension(path) == ".cfg") tabPage = new CFGTab(path);
             else if (Path.GetExtension(path) == ".png") tabPage = new PNGTab(path);
             else tabPage = new ASTab(path);
+            tabPage.Text += "     ";
 
             Tabs.TabPages.Add(tabPage);
             Tabs.SelectedTab = tabPage;

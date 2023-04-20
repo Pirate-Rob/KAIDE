@@ -54,5 +54,49 @@ namespace KAGIDE
                 settingsForm.ShowDialog();
             }
         }
+
+
+        private void tabControl1_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            try
+            {
+                var tabPage = tabControl1.TabPages[e.Index];
+                var tabRect = tabControl1.GetTabRect(e.Index);
+                tabRect.Inflate(-2, -2);
+                {
+                    var closeImage = Properties.Resources.Cancel;
+                    e.Graphics.DrawImage(closeImage,
+                        (tabRect.Right - closeImage.Width),
+                        tabRect.Top + (tabRect.Height - closeImage.Height) / 2);
+                    TextRenderer.DrawText(e.Graphics, tabPage.Text, tabPage.Font,
+                        tabRect, tabPage.ForeColor, TextFormatFlags.Left);
+                }
+            }
+            catch (Exception ex) { throw new Exception(ex.Message); }
+        }
+
+
+        private void tabControl1_MouseDown(object sender, MouseEventArgs e)
+        {
+            // Process MouseDown event only till (tabControl.TabPages.Count - 1) excluding the last TabPage
+            for (var i = 0; i < tabControl1.TabPages.Count; i++)
+            {
+                var tabRect = tabControl1.GetTabRect(i);
+                tabRect.Inflate(-2, -2);
+                var closeImage = Properties.Resources.Cancel;
+                var imageRect = new Rectangle(
+                    (tabRect.Right - closeImage.Width),
+                    tabRect.Top + (tabRect.Height - closeImage.Height) / 2,
+                    closeImage.Width,
+                    closeImage.Height);
+                if (imageRect.Contains(e.Location))
+                {
+                    tabControl1.TabPages.RemoveAt(i);
+                    break;
+                }
+            }
+        }
+
+
     }
 }
