@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using WK.Libraries.BetterFolderBrowserNS;
 
 namespace KAGIDE
 {
@@ -265,28 +266,29 @@ namespace KAGIDE
 
         public static void OpenDirectoryMenuItem_Click(object sender, EventArgs e)
         {
-            using (var openFileDialog = new OpenFileDialog())
+            string defaultFolderToOpen = Settings.Default.DefaultFileToOpen + "\\Mods\\";
+
+            var betterFolderBrowser = new BetterFolderBrowser();
+
+            betterFolderBrowser.Title = "Select mods folders...";
+            betterFolderBrowser.RootFolder = !string.IsNullOrEmpty(defaultFolderToOpen) && Directory.Exists(defaultFolderToOpen)
+                ? defaultFolderToOpen
+                : Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+            betterFolderBrowser.Multiselect = true;
+
+            if (betterFolderBrowser.ShowDialog() == DialogResult.OK)
             {
-                string defaultFolderToOpen = Settings.Default.DefaultFileToOpen + "\\Mods\\";
-
-                openFileDialog.Filter = "Folders|no.files";
-                openFileDialog.FileName = "Select a folder";
-                openFileDialog.Title = "Select a folder";
-                openFileDialog.CheckFileExists = false;
-                openFileDialog.CheckPathExists = true;
-                openFileDialog.Multiselect = false;
-                openFileDialog.ValidateNames = false;
-                openFileDialog.InitialDirectory = !string.IsNullOrEmpty(defaultFolderToOpen) && Directory.Exists(defaultFolderToOpen)
-                    ? defaultFolderToOpen
-                    : Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                string[] selectedFolderPath = betterFolderBrowser.SelectedFolders;
+                foreach (string folderPath in selectedFolderPath)
                 {
-                    string selectedFolderPath = Path.GetDirectoryName(openFileDialog.FileName);
-                    TreeNode RootNode = LoadDirectory(selectedFolderPath, false);
+                    TreeNode RootNode = LoadDirectory(folderPath, false);
                     RootNode.Expand();
                     SaveLoadedDirectories();
                 }
+
+                // If you've disabled multi-selection, use 'SelectedFolder'.
+                // string selectedFolder = betterFolderBrowser1.SelectedFolder;
             }
         }
 
