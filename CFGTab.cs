@@ -14,16 +14,19 @@ namespace KAGIDE
     {
 
         private CFGTabControl content;
+        private BlobCFG data;
 
         public CFGTab(string path)
         {
             this.Text = Path.GetFileName(path);
             this.Tag = path;
+            this.data = new BlobCFG(path);
+            data.Load();
 
             ToolStrip toolStrip = CreateTabToolStrip(
             saveButtonAction: () =>
             {
-                // Save the file
+                data.Save();
                 this.Text = Path.GetFileName((string)this.Tag);
             },
             closeButtonAction: () =>
@@ -36,7 +39,8 @@ namespace KAGIDE
             this.Controls.Add(toolStrip);
 
             content = new CFGTabControl();
-            content.Dock = DockStyle.Fill;
+            content.Dock = DockStyle.None;
+            content.Location = new Point(0, toolStrip.Height); // Set the location below the ToolStrip
             Controls.Add(content);
         }
 

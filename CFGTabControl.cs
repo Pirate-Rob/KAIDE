@@ -16,5 +16,16 @@ namespace KAGIDE
         {
             InitializeComponent();
         }
+
+        private void SpriteFactory_CheckedChanged(object sender, EventArgs e)
+        {
+            CheckBox cb = (CheckBox)sender;
+            SpriteBox.Enabled = cb.Checked;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
