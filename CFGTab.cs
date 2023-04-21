@@ -1,5 +1,4 @@
-﻿using ScintillaNET;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -8,22 +7,23 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+
 namespace KAGIDE
 {
     internal class CFGTab : TabPage
     {
+
+        private CFGTabControl content;
 
         public CFGTab(string path)
         {
             this.Text = Path.GetFileName(path);
             this.Tag = path;
 
-            /*
             ToolStrip toolStrip = CreateTabToolStrip(
             saveButtonAction: () =>
             {
                 // Save the file
-                File.WriteAllText(path, "");
                 this.Text = Path.GetFileName((string)this.Tag);
             },
             closeButtonAction: () =>
@@ -33,17 +33,11 @@ namespace KAGIDE
                 TabManager.CloseTab((string)this.Tag);
             });
 
-            Panel panel = new Panel { Dock = DockStyle.Fill };
-            panel.Controls.Add(toolStrip);
+            this.Controls.Add(toolStrip);
 
-
-            panel.Controls.Add(toolStrip);
-            this.Controls.Add(panel);
-            */
-
-            InitializeComponent();
-            
-
+            content = new CFGTabControl();
+            content.Dock = DockStyle.Fill;
+            Controls.Add(content);
         }
 
         private static ToolStrip CreateTabToolStrip(Action saveButtonAction, Action closeButtonAction)
@@ -63,23 +57,6 @@ namespace KAGIDE
             toolStrip.Items.Add(closeButton);
 
             return toolStrip;
-        }
-
-        private void InitializeComponent()
-        {
-            this.SuspendLayout();
-            this.ResumeLayout(false);
-
-        }
-
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-
         }
     }
 }

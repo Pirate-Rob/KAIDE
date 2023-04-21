@@ -59,8 +59,15 @@
     <Compile Include="ASTab.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="BlobCFG.cs" />
     <Compile Include="CFGTab.cs">
       <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CFGTabControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="CFGTabControl.Designer.cs">
+      <DependentUpon>CFGTabControl.cs</DependentUpon>
     </Compile>
     <Compile Include="ConfigForm.cs">
       <SubType>Form</SubType>
@@ -88,8 +95,8 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="CFGTab.resx">
-      <DependentUpon>CFGTab.cs</DependentUpon>
+    <EmbeddedResource Include="CFGTabControl.resx">
+      <DependentUpon>CFGTabControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ConfigForm.resx">
       <DependentUpon>ConfigForm.cs</DependentUpon>
