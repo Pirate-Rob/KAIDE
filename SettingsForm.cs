@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using WK.Libraries.BetterFolderBrowserNS;
 
 namespace KAGIDE
 {
@@ -27,25 +28,23 @@ namespace KAGIDE
 
         private void buttonBrowse_Click_1(object sender, EventArgs e)
         {
-            using (var openFileDialog = new OpenFileDialog())
+            string defaultFolderToOpen = Settings.Default.DefaultFileToOpen;
+
+            var betterFolderBrowser = new BetterFolderBrowser();
+
+            betterFolderBrowser.Title = "Select folder...";
+            betterFolderBrowser.RootFolder = !string.IsNullOrEmpty(defaultFolderToOpen) && Directory.Exists(defaultFolderToOpen)
+                ? defaultFolderToOpen
+                : Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+            betterFolderBrowser.Multiselect = false;
+
+            if (betterFolderBrowser.ShowDialog() == DialogResult.OK)
             {
-                string defaultFolderToOpen = Settings.Default.DefaultFileToOpen;
+                labelSelectedFile.Text = betterFolderBrowser.SelectedFolder;
 
-                openFileDialog.Filter = "Folders|no.files";
-                openFileDialog.FileName = "Select KAG folder";
-                openFileDialog.Title = "Select KAG folder";
-                openFileDialog.CheckFileExists = false;
-                openFileDialog.CheckPathExists = true;
-                openFileDialog.Multiselect = false;
-                openFileDialog.ValidateNames = false;
-                openFileDialog.InitialDirectory = !string.IsNullOrEmpty(defaultFolderToOpen) && Directory.Exists(defaultFolderToOpen)
-                    ? defaultFolderToOpen
-                    : Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    labelSelectedFile.Text = Path.GetDirectoryName(openFileDialog.FileName);
-                }
+                // If you've disabled multi-selection, use 'SelectedFolder'.
+                // string selectedFolder = betterFolderBrowser1.SelectedFolder;
             }
         }
 
