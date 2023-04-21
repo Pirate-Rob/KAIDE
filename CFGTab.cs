@@ -15,26 +15,37 @@ namespace KAGIDE
 
         private CFGTabControl content;
         private BlobCFG data;
+        private bool OnlyRead = false;
 
-        public CFGTab(string path)
+        public CFGTab(string path, bool onlyread)
         {
             this.Text = Path.GetFileName(path);
             this.Tag = path;
             this.data = new BlobCFG(path);
+            this.OnlyRead = onlyread;
             data.Load();
 
-            ToolStrip toolStrip = CreateTabToolStrip(
-            saveButtonAction: () =>
+            var toolStrip = new ToolStrip();
+
+            if (!OnlyRead)
             {
-                data.Save();
-                this.Text = Path.GetFileName((string)this.Tag);
-            },
-            closeButtonAction: () =>
-            {
+                var saveButton = new ToolStripButton("Save");
+                toolStrip.Items.Add(saveButton);
+                saveButton.Click += (sender, e) =>
+                {
+                    // Save the file
+                    CommitSave(path);
+                };
+            }
+
+            var closeButton = new ToolStripButton("Close");
+            toolStrip.Items.Add(closeButton);
+            closeButton.Alignment = ToolStripItemAlignment.Right;
+            closeButton.Click += (sender, e) => {
                 // Close the tab
                 //Tabs.TabPages.Remove(Page);
                 TabManager.CloseTab((string)this.Tag);
-            });
+            };
 
             this.Controls.Add(toolStrip);
 
@@ -44,23 +55,15 @@ namespace KAGIDE
             Controls.Add(content);
         }
 
-        private static ToolStrip CreateTabToolStrip(Action saveButtonAction, Action closeButtonAction)
+        private bool CommitSave(string path)
         {
-            var saveButton = new ToolStripButton("Save");
-            saveButton.Click += (sender, e) => saveButtonAction();
-
-            // Add more buttons as needed
-
-            var closeButton = new ToolStripButton("Close");
-            closeButton.Alignment = ToolStripItemAlignment.Right;
-            closeButton.Click += (sender, e) => closeButtonAction();
-
-            var toolStrip = new ToolStrip();
-            toolStrip.Items.Add(saveButton);
-            // Add more buttons to the ToolStrip
-            toolStrip.Items.Add(closeButton);
-
-            return toolStrip;
+            if (!OnlyRead)
+            {
+                data.Save();
+                this.Text = Path.GetFileName((string)this.Tag);
+                return true;
+            }
+            return false;
         }
     }
 }

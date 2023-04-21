@@ -12,13 +12,17 @@ namespace KAGIDE
 {
     internal class ASTab : TabPage
     {
-        public ASTab(string path)
+        private bool OnlyRead = false;
+        Scintilla scintilla;
+
+        public ASTab(string path, bool onlyread)
         {
             this.Text = Path.GetFileName(path);
             this.Tag = path;
+            this.OnlyRead = onlyread;
 
             //RichTextBox richTextBox = new RichTextBox { Dock = DockStyle.Fill, Text = File.ReadAllText(path) };
-            Scintilla scintilla = new Scintilla { Dock = DockStyle.Fill, Text = File.ReadAllText(path) };
+            scintilla = new Scintilla { Dock = DockStyle.Fill, Text = File.ReadAllText(path) };
             scintilla.Lexer = Lexer.Cpp;
             scintilla.EmptyUndoBuffer();
 
@@ -94,47 +98,37 @@ namespace KAGIDE
             scintilla.SetKeywords(1, fields.Trim());
             scintilla.SetKeywords(3, functions.Trim());
 
+            var toolStrip = new ToolStrip();
 
+            if (!OnlyRead)
+            {
+                var saveButton = new ToolStripButton("Save");
+                toolStrip.Items.Add(saveButton);
+                saveButton.Click += (sender, e) =>
+                {
+                    // Save the file
+                    CommitSave(path);
+                };
+            }
 
-            ToolStrip toolStrip = CreateTabToolStrip(
-            saveButtonAction: () =>
-            {
-                // Save the file
-                File.WriteAllText(path, scintilla.Text);
-                scintilla.SetSavePoint();
-                this.Text = Path.GetFileName((string)this.Tag);
-            },
-            closeButtonAction: () =>
-            {
+            var closeButton = new ToolStripButton("Close");
+            toolStrip.Items.Add(closeButton);
+            closeButton.Alignment = ToolStripItemAlignment.Right;
+            closeButton.Click += (sender, e) => {
                 // Close the tab
                 //Tabs.TabPages.Remove(Page);
                 TabManager.CloseTab((string)this.Tag);
-            });
+            };
+
+
+            
+            
 
             Panel panel = new Panel { Dock = DockStyle.Fill };
             panel.Controls.Add(scintilla);
             panel.Controls.Add(toolStrip);
             this.Controls.Add(panel);
             
-        }
-
-        private static ToolStrip CreateTabToolStrip(Action saveButtonAction, Action closeButtonAction)
-        {
-            var saveButton = new ToolStripButton("Save");
-            saveButton.Click += (sender, e) => saveButtonAction();
-
-            // Add more buttons as needed
-
-            var closeButton = new ToolStripButton("Close");
-            closeButton.Alignment = ToolStripItemAlignment.Right;
-            closeButton.Click += (sender, e) => closeButtonAction();
-
-            var toolStrip = new ToolStrip();
-            toolStrip.Items.Add(saveButton);
-            // Add more buttons to the ToolStrip
-            toolStrip.Items.Add(closeButton);
-
-            return toolStrip;
         }
 
 
@@ -297,6 +291,18 @@ namespace KAGIDE
             string TabName = Path.GetFileName((string)this.Tag);
             if (scintilla.Modified) this.Text = TabName + "*";
             else this.Text = TabName;
+        }
+
+        private bool CommitSave(string path)
+        {
+            if (!OnlyRead)
+            {
+                File.WriteAllText(path, scintilla.Text);
+                scintilla.SetSavePoint();
+                this.Text = Path.GetFileName((string)this.Tag);
+                return true;
+            }
+            return false;
         }
     }
 }

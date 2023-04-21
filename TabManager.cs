@@ -32,7 +32,7 @@ namespace KAGIDE
             }
         }
 
-        public static void OpenFileInTab(string path)
+        public static void OpenFileInTab(string path, bool onlyread)
         {
 
             foreach (TabPage tabpage in Tabs.TabPages)
@@ -45,9 +45,9 @@ namespace KAGIDE
             }
 
             TabPage tabPage;
-            if(Path.GetExtension(path) == ".cfg") tabPage = new CFGTab(path);
+            if(Path.GetExtension(path) == ".cfg") tabPage = new CFGTab(path, onlyread);
             else if (Path.GetExtension(path) == ".png") tabPage = new PNGTab(path);
-            else tabPage = new ASTab(path);
+            else tabPage = new ASTab(path, onlyread);
             tabPage.Text += "     ";
 
             Tabs.TabPages.Add(tabPage);

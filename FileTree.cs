@@ -17,7 +17,7 @@ namespace KAGIDE
         static TreeView Tree;
         static Form MainForm;
 
-        private static readonly string[] allowedFileExtensions = { ".txt", ".as", ".cfg", ".png" };
+        private static readonly string[] allowedFileExtensions = { ".as", ".cfg", ".png" };
         private static List<FileSystemWatcher> _fileSystemWatchers = new List<FileSystemWatcher>();
 
         public static void Init(TreeView tree, Form f)
@@ -26,6 +26,7 @@ namespace KAGIDE
             MainForm = f;
             InitializeTreeImageList();
             InitializeTreeViewContextMenu();
+
             LoadSavedDirectories();
 
             ///Events
@@ -70,6 +71,10 @@ namespace KAGIDE
             createNewCfgFileMenuItem.Click += CreateNewCfgFileMenuItem_Click;
             contextMenu.Items.Add(createNewCfgFileMenuItem);
 
+            var createReadOnlyMenuItem = new ToolStripMenuItem("<read only>");
+            createReadOnlyMenuItem.Enabled = false;
+            contextMenu.Items.Add(createReadOnlyMenuItem);
+
             Tree.ContextMenuStrip = contextMenu;
             
         }
@@ -90,14 +95,16 @@ namespace KAGIDE
         private static void UpdateContextMenuVisibility(TreeNode node)
         {
             bool isRootNode = node.Level == 0;
-            bool isDirectory = Directory.Exists(node.Tag.ToString());
+            bool isDirectory = Directory.Exists(GetTag(node,"path"));
+            bool onlyRead = HasTag(node, "readonly");
 
             //This looks supremely hacky, but obviously chatGPT knows better than me
-            Tree.ContextMenuStrip.Items[0].Visible = isRootNode; // Close Root Node
-            Tree.ContextMenuStrip.Items[1].Visible = !isDirectory; // Delete File
-            Tree.ContextMenuStrip.Items[2].Visible = !isRootNode && isDirectory; // Delete File
-            Tree.ContextMenuStrip.Items[3].Visible = isDirectory; // Create New .as File
-            Tree.ContextMenuStrip.Items[4].Visible = isDirectory; // Create New .cfg File
+            Tree.ContextMenuStrip.Items[0].Visible = !onlyRead && isRootNode; // Close Root Node
+            Tree.ContextMenuStrip.Items[1].Visible = !onlyRead && !isDirectory; // Delete File
+            Tree.ContextMenuStrip.Items[2].Visible = !onlyRead && !isRootNode && isDirectory; // Delete File
+            Tree.ContextMenuStrip.Items[3].Visible = !onlyRead && isDirectory; // Create New .as File
+            Tree.ContextMenuStrip.Items[4].Visible = !onlyRead && isDirectory; // Create New .cfg File
+            Tree.ContextMenuStrip.Items[5].Visible = onlyRead; // Read only
         }
 
         private static void CloseRootNodeMenuItem_Click(object sender, EventArgs e)
@@ -107,6 +114,7 @@ namespace KAGIDE
             {
                 node.Remove();
             }
+            SaveLoadedDirectories();
         }
 
         private static void DeleteFileMenuItem_Click(object sender, EventArgs e)
@@ -117,7 +125,7 @@ namespace KAGIDE
                 var result = MessageBox.Show("Are you sure you want to permanently delete this file?", "Delete File", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
                 if (result == DialogResult.Yes)
                 {
-                    string path = node.Tag.ToString();
+                    string path = GetTag(node, "path");
                     File.Delete(path);
                     node.Remove();
 
@@ -132,7 +140,7 @@ namespace KAGIDE
             TreeNode node = Tree.SelectedNode;
             if (node != null && node.Nodes.Count > 0)
             {
-                string folderPath = node.Tag as string;
+                string folderPath = GetTag(node, "path");
                 if (folderPath != null)
                 {
                     DialogResult result = MessageBox.Show("Are you sure you want to delete this folder?", "Delete Folder", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
@@ -177,16 +185,16 @@ namespace KAGIDE
 
         private static void CreateNewFile(TreeNode node, string fileName, string extension, string content = "")
         {
-            if (Directory.Exists(node.Tag.ToString()))
+            if (Directory.Exists(GetTag(node, "path")))
             {
-                string fullPath = Path.Combine(node.Tag.ToString(), fileName);
+                string fullPath = Path.Combine(GetTag(node, "path"), fileName);
                 int count = 1;
 
                 while (File.Exists(fullPath))
                 {
                     string nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
                     fileName = $"{nameWithoutExtension} ({count}){extension}";
-                    fullPath = Path.Combine(node.Tag.ToString(), fileName);
+                    fullPath = Path.Combine(GetTag(node, "path"), fileName);
                     count++;
                 }
 
@@ -220,10 +228,11 @@ namespace KAGIDE
         {
             if (IsValidFileExtension(e.Node.Text))
             {
-                var path = e.Node.Tag.ToString();
+                var path = GetTag(e.Node, "path");
+                var onlyread = HasTag(e.Node, "readonly");
                 if (File.Exists(path))
                 {
-                    TabManager.OpenFileInTab(path);
+                    TabManager.OpenFileInTab(path, onlyread);
                 }
             }
         }
@@ -233,7 +242,7 @@ namespace KAGIDE
             var loadedDirectories = new StringCollection();
             foreach (TreeNode node in Tree.Nodes)
             {
-                loadedDirectories.Add(node.Tag.ToString());
+                if(node.Text != "Base")loadedDirectories.Add(GetTag(node, "path"));
             }
 
             Settings.Default.LoadedDirectories = loadedDirectories;
@@ -242,11 +251,14 @@ namespace KAGIDE
 
         private static void LoadSavedDirectories()
         {
+            Console.WriteLine("Settings.Default.LoadedDirectories" + Settings.Default.LoadedDirectories);
+            LoadDirectory(Settings.Default.DefaultFileToOpen + "\\Base", true);
+
             if (Settings.Default.LoadedDirectories != null)
             {
                 foreach (string directoryPath in Settings.Default.LoadedDirectories)
                 {
-                    LoadDirectory(directoryPath);
+                    LoadDirectory(directoryPath, false);
                 }
             }
         }
@@ -271,41 +283,42 @@ namespace KAGIDE
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     string selectedFolderPath = Path.GetDirectoryName(openFileDialog.FileName);
-                    LoadDirectory(selectedFolderPath);
+                    TreeNode RootNode = LoadDirectory(selectedFolderPath, false);
+                    RootNode.Expand();
+                    SaveLoadedDirectories();
                 }
             }
         }
 
-        private static void LoadDirectory(string directoryPath)
+        private static TreeNode LoadDirectory(string directoryPath, bool onlyread)
         {
             // Check if the directory already exists in the tree
-            TreeNode existingNode = null;
+            TreeNode Node = null;
             foreach (TreeNode node in Tree.Nodes)
             {
-                if (node.Tag.ToString() == directoryPath)
+                if (GetTag(node, "path") == directoryPath)
                 {
-                    existingNode = node;
+                    Node = node;
                     break;
                 }
             }
 
             // If the directory already exists, focus on it
-            if (existingNode != null)
+            if (Node != null)
             {
-                Tree.SelectedNode = existingNode;
-                existingNode.Expand();
+                Tree.SelectedNode = Node;
+                Node.Expand();
             }
             else
             {
                 // If the directory is not in the tree, create a new primary node for it
-                TreeNode rootNode = new TreeNode(Path.GetFileName(directoryPath), GetFileImage(directoryPath, false), GetFileImage(directoryPath, true));
-                rootNode.Tag = directoryPath;
-                GetDirectories(directoryPath, rootNode);
-                Tree.Nodes.Add(rootNode);
-                rootNode.Expand();
+                Node = new TreeNode(Path.GetFileName(directoryPath), GetFileImage(directoryPath, false), GetFileImage(directoryPath, true));
+                BuildTag(Node, directoryPath, onlyread);
+                GetDirectories(directoryPath, Node, onlyread);
+                Tree.Nodes.Add(Node);
                 SetupFileSystemWatcher(directoryPath);
-                SaveLoadedDirectories();
             }
+            return Node;
         }
 
         private static void SetupFileSystemWatcher(string directoryPath)
@@ -331,7 +344,7 @@ namespace KAGIDE
             {
                 foreach (TreeNode rootNode in Tree.Nodes)
                 {
-                    UpdateFileTreeNodes(rootNode.Nodes, rootNode.Tag.ToString());
+                    UpdateFileTreeNodes(rootNode.Nodes, GetTag(rootNode, "path"));
                 }
             }));
         }
@@ -342,7 +355,7 @@ namespace KAGIDE
             {
                 foreach (TreeNode rootNode in Tree.Nodes)
                 {
-                    UpdateFileTreeNodes(rootNode.Nodes, rootNode.Tag.ToString());
+                    UpdateFileTreeNodes(rootNode.Nodes, GetTag(rootNode, "path"));
                 }
             }));
         }
@@ -354,11 +367,11 @@ namespace KAGIDE
 
             foreach (TreeNode node in nodes)
             {
-                currentPaths.Add(node.Tag.ToString());
+                currentPaths.Add(GetTag(node, "path"));
             }
 
             // Remove missing nodes
-            List<TreeNode> nodesToRemove = nodes.Cast<TreeNode>().Where(node => !Directory.Exists(node.Tag.ToString()) && !File.Exists(node.Tag.ToString())).ToList();
+            List<TreeNode> nodesToRemove = nodes.Cast<TreeNode>().Where(node => !Directory.Exists(GetTag(node, "path")) && !File.Exists(GetTag(node, "path"))).ToList();
             foreach (TreeNode nodeToRemove in nodesToRemove)
             {
                 nodes.Remove(nodeToRemove);
@@ -370,7 +383,7 @@ namespace KAGIDE
                 if (!currentPaths.Contains(subDirectoryInfo.FullName))
                 {
                     TreeNode subDirectoryNode = new TreeNode(subDirectoryInfo.Name, GetFileImage(subDirectoryInfo.FullName, false), GetFileImage(subDirectoryInfo.FullName, true));
-                    subDirectoryNode.Tag = subDirectoryInfo.FullName;
+                    BuildTag(subDirectoryNode, subDirectoryInfo.FullName, false);
                     nodes.Add(subDirectoryNode);
                     UpdateFileTreeNodes(subDirectoryNode.Nodes, subDirectoryInfo.FullName);
                 }
@@ -380,7 +393,7 @@ namespace KAGIDE
                 if (!currentPaths.Contains(fileInfo.FullName))
                 {
                     TreeNode fileNode = new TreeNode(fileInfo.Name, GetFileImage(fileInfo.FullName, false), GetFileImage(fileInfo.FullName, true));
-                    fileNode.Tag = fileInfo.FullName;
+                    BuildTag(fileNode, fileInfo.FullName, false);
                     nodes.Add(fileNode);
                 }
             }
@@ -390,7 +403,7 @@ namespace KAGIDE
             {
                 if (IsDirectoryNode(node))
                 {
-                    string nodePath = node.Tag.ToString();
+                    string nodePath = GetTag(node, "path");
                     DirectoryInfo nodeDirectoryInfo = new DirectoryInfo(nodePath);
                     if (nodeDirectoryInfo.Name != node.Text)
                     {
@@ -400,7 +413,7 @@ namespace KAGIDE
                 }
                 else // File
                 {
-                    string nodePath = node.Tag.ToString();
+                    string nodePath = GetTag(node, "path");
                     FileInfo nodeFileInfo = new FileInfo(nodePath);
                     if (nodeFileInfo.Name != node.Text)
                     {
@@ -412,11 +425,11 @@ namespace KAGIDE
 
         private static bool IsDirectoryNode(TreeNode node)
         {
-            string path = node.Tag.ToString();
+            string path = GetTag(node, "path");
             return (Directory.Exists(path) || node.Nodes.Count > 0);
         }
 
-        private static void GetDirectories(string directoryPath, TreeNode parentNode)
+        private static void GetDirectories(string directoryPath, TreeNode parentNode, bool onlyread)
         {
             DirectoryInfo directoryInfo = new DirectoryInfo(directoryPath);
             var imageList = Tree.ImageList;
@@ -425,18 +438,24 @@ namespace KAGIDE
                 // Load subdirectories
                 foreach (DirectoryInfo subDirectoryInfo in directoryInfo.GetDirectories())
                 {
+                    if (onlyread && subDirectoryInfo.Name == "Maps") continue; //Loading vanilla maps takes ages and it's not worth the wait
+                    
                     TreeNode subDirectoryNode = new TreeNode(subDirectoryInfo.Name, GetFileImage(subDirectoryInfo.FullName, false), GetFileImage(subDirectoryInfo.FullName, true));
-                    subDirectoryNode.Tag = subDirectoryInfo.FullName;
+                    BuildTag(subDirectoryNode, subDirectoryInfo.FullName, onlyread);
                     parentNode.Nodes.Add(subDirectoryNode);
-                    GetDirectories(subDirectoryInfo.FullName, subDirectoryNode);
+                    GetDirectories(subDirectoryInfo.FullName, subDirectoryNode, onlyread);
                 }
 
                 // Load files
                 foreach (FileInfo fileInfo in directoryInfo.GetFiles())
                 {
-                    TreeNode fileNode = new TreeNode(fileInfo.Name, GetFileImage(fileInfo.FullName, false), GetFileImage(fileInfo.FullName, true));
-                    fileNode.Tag = fileInfo.FullName;
-                    parentNode.Nodes.Add(fileNode);
+                    if (allowedFileExtensions.Contains(fileInfo.Extension))
+                    {
+                        TreeNode fileNode = new TreeNode(fileInfo.Name, GetFileImage(fileInfo.FullName, false), GetFileImage(fileInfo.FullName, true));
+                        BuildTag(fileNode, fileInfo.FullName, onlyread);
+                        parentNode.Nodes.Add(fileNode);
+                        //Console.WriteLine(fileInfo.FullName);
+                    }
                 }
             }
             catch (UnauthorizedAccessException)
@@ -479,5 +498,51 @@ namespace KAGIDE
             return imageList.Images.IndexOfKey("file");
         }
 
+        static void BuildTag(TreeNode node, string path, bool onlyread)
+        {
+            string build = "path|" + path + ";";
+            if(onlyread) build += "readonly;";
+            node.Tag = build;
+        }
+
+        static string GetTag(TreeNode node, string Key)
+        {
+            string Tag = (string)node.Tag;
+            string[] pairs = Tag.Split(';'); // Split the Tag string into key-value pairs
+            foreach (string pair in pairs)
+            {
+                if (pair.Contains("|"))
+                {
+                    string[] parts = pair.Split('|'); // Split each pair into key and value
+                    if (parts.Length == 2 && parts[0].Trim() == Key) // Check if the key matches
+                    {
+                        return parts[1].Trim(); // Return the value
+                    }
+                }
+            }
+            return ""; // Key not found
+        }
+
+        static bool HasTag(TreeNode node, string Key)
+        {
+            string Tag = (string)node.Tag;
+            string[] pairs = Tag.Split(';'); // Split the Tag string into key-value pairs
+            foreach (string pair in pairs)
+            {
+                if (pair.Contains("|"))
+                {
+                    string[] parts = pair.Split('|'); // Split each pair into key and value
+                    if (parts.Length == 2 && parts[0].Trim() == Key) // Check if the key matches
+                    {
+                        return true; // Return the value
+                    }
+                }
+                else
+                {
+                    if (pair == Key) return true;
+                }
+            }
+            return false; // Key not found
+        }
     }
 }

@@ -53,6 +53,7 @@
             this.treeView1.Name = "treeView1";
             this.treeView1.Size = new System.Drawing.Size(262, 741);
             this.treeView1.TabIndex = 2;
+            this.treeView1.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeView1_AfterSelect);
             // 
             // splitContainer1
             // 
@@ -86,8 +87,8 @@
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(914, 717);
             this.tabControl1.TabIndex = 1;
-            this.tabControl1.DrawItem += new System.Windows.Forms.DrawItemEventHandler(tabControl1_DrawItem);
-            this.tabControl1.MouseDown += new System.Windows.Forms.MouseEventHandler(tabControl1_MouseDown);
+            this.tabControl1.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.tabControl1_DrawItem);
+            this.tabControl1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.tabControl1_MouseDown);
             // 
             // Form1
             // 
