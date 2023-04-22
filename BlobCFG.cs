@@ -7,7 +7,6 @@ using System.Linq;
 public class BlobCFG
 {
     public string FilePath { get; private set; }
-    public Dictionary<string, object> Properties { get; private set; }
 
     private Stack<Change> undoStack;
     private Stack<Change> redoStack;
@@ -16,7 +15,6 @@ public class BlobCFG
     public BlobCFG(string filePath)
     {
         FilePath = filePath;
-        Properties = new Dictionary<string, object>();
         undoStack = new Stack<Change>();
         redoStack = new Stack<Change>();
         lastSavedChangeCount = 0;
@@ -181,17 +179,11 @@ public class BlobCFG
         lastSavedChangeCount = undoStack.Count;
     }
 
-    public object GetProperty(string key)
-    {
-        return Properties.ContainsKey(key) ? Properties[key] : null;
-    }
-
     public void SetProperty(string key, object value)
     {
         object oldVal = SetValue(key, value);
         undoStack.Push(new Change(key, oldVal));
         redoStack.Clear();
-        Properties[key] = value;
     }
 
     public void Undo()
@@ -338,6 +330,48 @@ public class BlobCFG
             case "bool block_snaptogrid":
                 oldVal = BlockSnaptogrid;
                 BlockSnaptogrid = (bool)value;
+                break;
+
+            //General
+            case "$name":
+                oldVal = Name;
+                Name = (string)value;
+                break;
+            case "$inventory_name":
+                oldVal = InventoryName;
+                InventoryName = (string)value;
+                break;
+            case "$inventory_icon":
+                oldVal = InventoryIcon;
+                InventoryIcon = (string)value;
+                break;
+            case "f32 health":
+                oldVal = Health;
+                Health = (float)value;
+                break;
+            case "u8 inventory_icon_frame":
+                oldVal = InventoryIconFrame;
+                InventoryIconFrame = (int)value;
+                break;
+            case "u8 inventory_icon_frame_width":
+                oldVal = InventoryIconFrameWidth;
+                InventoryIconFrameWidth = (int)value;
+                break;
+            case "u8 inventory_icon_frame_height":
+                oldVal = InventoryIconFrameHeight;
+                InventoryIconFrameHeight = (int)value;
+                break;
+            case "u8 inventory_used_width":
+                oldVal = InventoryUsedWidth;
+                InventoryUsedWidth = (int)value;
+                break;
+            case "u8 inventory_used_height":
+                oldVal = InventoryUsedHeight;
+                InventoryUsedHeight = (int)value;
+                break;
+            case "u8 inventory_max_stacks":
+                oldVal = InventoryMaxStacks;
+                InventoryMaxStacks = (int)value;
                 break;
         }
         return oldVal;

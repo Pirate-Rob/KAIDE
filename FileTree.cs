@@ -20,6 +20,9 @@ namespace KAGIDE
 
         private static readonly string[] allowedFileExtensions = { ".as", ".cfg", ".png" };
         private static List<FileSystemWatcher> _fileSystemWatchers = new List<FileSystemWatcher>();
+        private static Dictionary<string, string> ImagePaths = new Dictionary<string, string>();
+
+        
 
         public static void Init(TreeView tree, Form f)
         {
@@ -396,6 +399,7 @@ namespace KAGIDE
                 {
                     TreeNode fileNode = new TreeNode(fileInfo.Name, GetFileImage(fileInfo.FullName, false), GetFileImage(fileInfo.FullName, true));
                     BuildTag(fileNode, fileInfo.FullName, false);
+                    if (Path.GetExtension(fileInfo.Name) == ".png") AddImage(fileInfo.FullName);
                     nodes.Add(fileNode);
                 }
             }
@@ -455,6 +459,7 @@ namespace KAGIDE
                     {
                         TreeNode fileNode = new TreeNode(fileInfo.Name, GetFileImage(fileInfo.FullName, false), GetFileImage(fileInfo.FullName, true));
                         BuildTag(fileNode, fileInfo.FullName, onlyread);
+                        if (Path.GetExtension(fileInfo.Name) == ".png") AddImage(fileInfo.FullName);
                         parentNode.Nodes.Add(fileNode);
                         //Console.WriteLine(fileInfo.FullName);
                     }
@@ -545,6 +550,23 @@ namespace KAGIDE
                 }
             }
             return false; // Key not found
+        }
+
+        //We don't clear any images that have been deleted from this because it would mean going through every file again and finding if there are any images with the same name
+        //Honestly it doesn't matter either, as long as you make sure to check the path you get from GetImagePath(string name) is valid (which you should do anyway)
+        public static void AddImage(string path) {
+            string key = Path.GetFileName(path);
+            if (ImagePaths.ContainsKey(key))ImagePaths.Remove(key);
+            ImagePaths.Add(key, path);
+            //Console.WriteLine("Found image: "+ key);
+        }
+        public static string GetImagePath(string name) {
+            string imagePath;
+            if (ImagePaths.TryGetValue(name, out imagePath)) {
+                return imagePath;
+            } else {
+                return string.Empty;
+            }
         }
     }
 }

@@ -81,6 +81,7 @@
     <Compile Include="PNGTab.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="SpriteDrawer.cs" />
     <Compile Include="TabManager.cs" />
     <Compile Include="FileTree.cs" />
     <Compile Include="KAGScraper.cs" />

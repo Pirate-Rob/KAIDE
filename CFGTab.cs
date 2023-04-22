@@ -14,16 +14,17 @@ namespace KAGIDE
     {
 
         private CFGTabControl content;
-        private BlobCFG data;
+        private BlobCFG Data;
         private bool OnlyRead = false;
 
         public CFGTab(string path, bool onlyread)
         {
             this.Text = Path.GetFileName(path);
             this.Tag = path;
-            this.data = new BlobCFG(path);
+            this.Data = new BlobCFG(path);
             this.OnlyRead = onlyread;
-            data.Load();
+            Data.Load();
+            
 
             var toolStrip = new ToolStrip();
 
@@ -47,11 +48,11 @@ namespace KAGIDE
                 TabManager.CloseTab((string)this.Tag);
             };
 
-            this.Controls.Add(toolStrip);
-
-            content = new CFGTabControl();
+            content = new CFGTabControl(Data);
             content.Dock = DockStyle.None;
             content.Location = new Point(0, toolStrip.Height); // Set the location below the ToolStrip
+
+            Controls.Add(toolStrip);
             Controls.Add(content);
         }
 
@@ -59,7 +60,7 @@ namespace KAGIDE
         {
             if (!OnlyRead)
             {
-                data.Save();
+                Data.Save();
                 this.Text = Path.GetFileName((string)this.Tag);
                 return true;
             }
